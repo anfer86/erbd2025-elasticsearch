@@ -3,10 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from elasticsearch import Elasticsearch
 import logging
-
-#exit("ATENÇÃO: tem que indicar o host e renomear o índice, adicione um suffixo com seu nome ou um numero, para não sobrescrever o índice de outro aluno.")
-elastic_host = 'http://localhost:9200'
-index_name='erbd-reviews-index-001'
+from config import elastic_host, index_name
 
 es = Elasticsearch(hosts=[elastic_host])    
 
@@ -25,14 +22,13 @@ def search_reviews(query_text):
     query = {
         "query_string": {
             "query": query_text,
-            "default_field": "text",
-            "default_operator": "AND",
+            "default_field": "text",            
         }
     }
     highlight = {"fields": {"text": {}}}
     
     
-    es_result = es.search(index=index_name, query=query, highlight=highlight)
+    es_result = es.search(index=index_name, query=query, highlight=highlight, size=20)
     for hit in es_result['hits']['hits']:
         results.append({
             "text": hit['_source']['text'],
@@ -42,31 +38,6 @@ def search_reviews(query_text):
         })
     return results
 
-def search_reviews_embeddings(query_text):
-    """Executa a busca no Elasticsearch e retorna os resultados formatados."""
-    from sentence_transformers import SentenceTransformer, util
-    model = SentenceTransformer('intfloat/multilingual-e5-small')
-    
-    query_vector = model.encode(query_text, convert_to_tensor=True).tolist()                
-    results = []
-    knn_query = {    
-        "field": "sentence_embeddings",
-        "query_vector": query_vector,
-        "k": 20,
-        "num_candidates": 100    
-    }    
-
-    logger.info("Executando a busca no índice...")
-    es_result = es.search(index=index_name, knn=knn_query)
-    
-    for hit in es_result['hits']['hits']:
-        results.append({
-            "text": hit['_source']['text'],
-            "rating": hit['_source']['rating'],
-            "highlight": hit['_source']['sentence'],
-            "score": round(hit['_score'], 2)
-        })
-    return results
 
 @app.get('/', response_class=HTMLResponse)
 def home(request: Request, q: str = ""):
@@ -74,7 +45,7 @@ def home(request: Request, q: str = ""):
     results = []
     total = 0    
     if q:
-        results = search_reviews_embeddings(q)
+        results = search_reviews(q)
         total = len(results)        
     # HTML com Bootstrap e estilo embutido
     html = f'''

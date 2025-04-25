@@ -2,14 +2,11 @@ from time import sleep
 from elasticsearch import Elasticsearch
 import logging
 from tqdm import tqdm
+from config import elastic_host, index_name
 
 # Configura o logger para mostrar mensagens informativas
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-#exit("ATENÇÃO: tem que indicar o host e renomear o índice, adicione um suffixo com seu nome ou um numero, para não sobrescrever o índice de outro aluno.")
-elastic_host = 'http://localhost:9200'
-index_name='erbd-reviews-index-001'
 
 # Lista de reviews simulando dados reais
 from google_play_scraper import reviews, Sort
@@ -40,7 +37,8 @@ for result in result_list:
         logger.info(f"Review: {review}")
         reviews.append(review)
 
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
+print("Carregando o modelo de embeddings...")
 model = SentenceTransformer('intfloat/multilingual-e5-small')
 
 for review in tqdm(reviews):

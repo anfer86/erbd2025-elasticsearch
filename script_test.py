@@ -1,17 +1,11 @@
 from time import sleep
 from elasticsearch import Elasticsearch
 import logging
+from config import elastic_host, index_name
 
 # Configura o logger para mostrar mensagens informativas
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-
-exit("ATENÇÃO: tem que indicar o host e renomear o índice, adicione um suffixo com seu nome ou um numero, para não sobrescrever o índice de outro aluno.")
-elastic_host = 'http://localhost:9200'
-index_name='erbd-reviews-index-001'
-
-
 
 logger.info("Este é um script de teste para o Elastic Search. Ele cria um índice (semelhante a uma tabela no postgres) chamado index_name e insere alguns reviews de celulares. Ele também faz uma busca por reviews que contenham a palavra 'celular'.")
 sleep(5)

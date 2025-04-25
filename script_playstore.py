@@ -1,20 +1,17 @@
 from time import sleep
 from elasticsearch import Elasticsearch
 import logging
+from config import elastic_host, index_name
 
 # Configura o logger para mostrar mensagens informativas
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-#exit("ATENÇÃO: tem que indicar o host e renomear o índice, adicione um suffixo com seu nome ou um numero, para não sobrescrever o índice de outro aluno.")
-elastic_host = 'http://localhost:9200'
-index_name='erbd-reviews-index-001'
-
 # Lista de reviews simulando dados reais
 reviews = []
 
 logger.info("Conectando ao Elasticsearch local...")
-es = Elasticsearch(hosts=['http://localhost:9200'])
+es = Elasticsearch(hosts=[elastic_host])
 
 logger.info("Definindo configurações de análise para o português brasileiro...")
 settings = {

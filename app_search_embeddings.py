@@ -25,8 +25,6 @@ logger = logging.getLogger(__name__)
 
 def search_reviews(query_text):
     """Executa a busca no Elasticsearch e retorna os resultados formatados."""
-    
-    
     query_vector = model.encode(query_text, convert_to_tensor=True).tolist()                
     results = []
     knn_query = {    
