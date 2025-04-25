@@ -3,14 +3,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from elasticsearch import Elasticsearch
 import logging
+from config import elastic_host, index_name
 
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
 model = SentenceTransformer('intfloat/multilingual-e5-small')
-
-#exit("ATENÇÃO: tem que indicar o host e renomear o índice, adicione um suffixo com seu nome ou um numero, para não sobrescrever o índice de outro aluno.")
-elastic_host = 'http://localhost:9200'
-index_name='erbd-reviews-index-001'
 
 es = Elasticsearch(hosts=[elastic_host])    
 
