@@ -7,8 +7,10 @@ from config import elastic_host, index_name
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-logger.info("Este é um script de teste para o Elastic Search. Ele cria um índice (semelhante a uma tabela no postgres) chamado index_name e insere alguns reviews de celulares. Ele também faz uma busca por reviews que contenham a palavra 'celular'.")
-sleep(5)
+logger.info("Este é um script de teste para o Elastic Search.")
+logger.info("Ele cria um índice (semelhante a uma tabela no postgres) e insere alguns reviews de celulares.")
+logger.info("Ele também faz uma busca por reviews que contenham a palavra 'celular' e 'excelente'.")
+sleep(10)
 
 # Lista de reviews simulando dados reais
 reviews = [
@@ -64,10 +66,14 @@ reviews = [
     }
 ]
 
-logger.info("Conectando ao Elasticsearch local...")
+logger.info("Conectando ao Elasticsearch...")
+sleep(5)
 es = Elasticsearch(hosts=[elastic_host])
 
+
+
 logger.info("Definindo configurações de análise para o português brasileiro...")
+sleep(5)
 settings = {
     "analysis": {
         "analyzer": {            
@@ -81,6 +87,7 @@ settings = {
 }
 
 logger.info("Definindo mapeamento dos campos do índice...")
+sleep(5)
 mappings = {
     "dynamic": "strict",
     "properties": {
@@ -100,13 +107,16 @@ mappings = {
 }
 
 logger.info("Removendo o índice se já existir, para garantir um ambiente limpo...")
+sleep(5)
 if es.indices.exists(index=index_name):
     es.indices.delete(index=index_name)
 
 logger.info("Criando o índice com as configurações e mapeamentos definidos...")
+sleep(5)
 es.indices.create(index=index_name, mappings=mappings, settings=settings)
 
 logger.info("Inserindo cada review no índice...")
+sleep(5)
 for review in reviews:
     es.index(index=index_name, body=review, refresh=True)
 
@@ -118,6 +128,7 @@ query = {
         "quote_field_suffix": ".exact"
     }
 }
+sleep(5)
 
 logger.info("Configurando o destaque (highlight) para mostrar os trechos encontrados...")
 highlight = {
@@ -127,6 +138,7 @@ highlight = {
 }
 
 logger.info("Executando a busca no índice...")
+sleep(5)
 result = es.search(index=index_name, query=query, highlight=highlight)
 
 logger.info("Exibindo os resultados encontrados, mostrando o trecho destacado e a pontuação...")
