@@ -15,7 +15,7 @@ Essa é uma oportunidade prática para entender e aplicar técnicas modernas de 
 * **Python** instalado para execução de scripts
 * Editor de texto ou IDE (ex.: VSCode, PyCharm)
 
-## Instalação e Configuração
+## A. Instalação e Configuração
 
 ### 1. Clonar este repositório
 ```bash
@@ -77,7 +77,7 @@ Para rodar o primeiro script de indexação, execute:
 $ python script_test.py
 ```
 
-## Entendendo o Script de Teste:
+## B. Entendendo o Script de Teste:
 
 Após rodar o `script_test.py`, um índice chamado `erbd-reviews-index` é criado no ElasticSearch com alguns reviews de celulares. Agora, vamos explorar esse índice usando o Kibana:
 
@@ -101,16 +101,25 @@ Após rodar o `script_test.py`, um índice chamado `erbd-reviews-index` é criad
   }
   ```
 
+  Observar o indice `GET erbd-reviews-index` e a configuração do mapeamento.
+
+  Exemplo de teste do analyzer
+  ```
+  GET erbd-reviews-index/_analyze
+  {
+    "analyzer": "brazilian",
+    "text": "baterias"
+  }
+  ```
+
+  Pesquisar por frases como "as baterias são boas", "celular é bom", "a câmera é excelente", etc.
+   
+
 - **Ordenar documentos:**  
   Para listar os reviews ordenados pela nota (rating), do maior para o menor:
   ```
   GET erbd-reviews-index/_search
   {
-    "query": {
-      "query_string": {
-        "query": "*"
-      }
-    },
     "sort": [
       { "rating": "desc" }
     ]
@@ -222,11 +231,19 @@ Após rodar o `script_test.py`, um índice chamado `erbd-reviews-index` é criad
 
 Essas consultas mostram o poder do query_string para buscas flexíveis e avançadas no Elasticsearch!
 
-## Conteúdo do Curso
+Uma informação importante é que ElasticSearch indexa os textos com um método adaptado do TF-IDF (Term Frequency-Inverse Document Frequency), chamado BM25.
+BM25 se baseia na frequência de termos (TF) e na frequência inversa de documentos (IDF), ajustando a relevância dos resultados com base no tamanho do documento e evitando que palavras muito comuns dominem os resultados.
 
-1. Ingestão de Dados:
+- Links importantes:
+  - [Documentação do Kibana](https://www.elastic.co/guide/en/kibana/current/index.html)
+  - [Search API](https://www.elastic.co/guide/en/elasticsearch/reference/current/search.html)
+  - [Query DSL](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html)
 
-A partir do `script_test.py`, vamos realizar uma cópia do arquivo e renomear o arquivo para `script_1.py`.
+
+
+## C. Ingerindo dados reais de reviews de produtos
+
+A partir do `script_test.py`, vamos realizar uma cópia do arquivo e renomear o arquivo para `script_playstore.py`.
 
 No lugar onde obtemos criamos dados ficticios, vamos buscar os dados reais. Para isso vamos buscar dados da loja de aplicativos do Google Play, especificamente os dados de reviews de aplicativos. Para isso, utilizaremos a biblioteca `google_play_scraper` para coletar os dados.
 
@@ -234,22 +251,27 @@ No lugar onde obtemos criamos dados ficticios, vamos buscar os dados reais. Para
 from google_play_scraper import reviews, Sort
 
 app_id = 'br.com.gabba.Caixa' # ID do aplicativo
-result, continuation_token = reviews(
+result_list, continuation_token = reviews(
     app_id,
     lang='pt',
     country='br',
     sort=Sort.MOST_RELEVANT,
-    count=5
+    count=100
 )
 
 reviews = []
-for review in result:
-    reviews.append({
-        "id": review['reviewId'],
-        "text": review['content'],
-        "rating": review['score']
-    })
+for result in result_list:
+    review = {
+        "id": result['reviewId'],
+        "text": result['content'],
+        "rating": result['score']
+    }
+    logger.info(f"Review: {review}")
+    reviews.append(review)
 ```
+
+
+
 
 ## Autores
 
