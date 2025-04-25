@@ -23,15 +23,21 @@ $ git clone https://github.com/seu-usuario/elastic-search-erbd-2025.git
 $ cd elastic-search-erbd-2025
 ```
 
+As etapas 2 e 3 são opcionais se você esta fazendo a oficina no ambiente do evento, pois o ElasticSearch e o Kibana já estão configuradas em `http://oficinaerbd.inf.ufsc.br:9200/` e `http://oficinaerbd.inf.ufsc.br:5601/`, respectivamente. Caso contrário, siga os passos abaixo para configurar o ambiente localmente.
+
 ### 2. Subir o ambiente com ElasticSearch e Kibana
 
-Utilizaremos o Docker Compose para criar o ambiente de busca.
+Kibana é uma interface gráfica para interagir com o ElasticSearch. Para subir o ambiente, utilize o Docker Compose.
+
 ```bash
 $ docker-compose up -d
 ```
+
 Isso iniciará:
+```bash
 - **ElasticSearch** na porta `9200`
 - **Kibana** na porta `5601`
+```
 
 Acesse o Kibana em: [http://localhost:5601](http://localhost:5601)
 
@@ -68,9 +74,182 @@ $ pip install -r requirements.txt
 
 Para rodar o primeiro script de indexação, execute:
 ```bash
-$ python script1.py
+$ python script_test.py
 ```
-(Substitua `script1.py` pelo nome correto do arquivo.)
+
+## Entendendo o Script de Teste:
+
+Após rodar o `script_test.py`, um índice chamado `erbd-reviews-index` é criado no ElasticSearch com alguns reviews de celulares. Agora, vamos explorar esse índice usando o Kibana:
+
+- **Listar documentos:**  
+  No Kibana, acesse o menu "Dev Tools" e execute:
+  ```
+  GET erbd-reviews-index/_search
+  ```
+  Isso retorna todos os documentos do índice.
+
+- **Pesquisar documentos por texto:**  
+  Para buscar reviews que contenham uma palavra específica, por exemplo "bateria":
+  ```
+  GET erbd-reviews-index/_search
+  {
+    "query": {
+      "query_string": {
+        "query": "bateria"
+      }
+    }
+  }
+  ```
+
+- **Ordenar documentos:**  
+  Para listar os reviews ordenados pela nota (rating), do maior para o menor:
+  ```
+  GET erbd-reviews-index/_search
+  {
+    "query": {
+      "query_string": {
+        "query": "*"
+      }
+    },
+    "sort": [
+      { "rating": "desc" }
+    ]
+  }
+  ```
+
+- **Exemplo de busca com curingas:**  
+  Para buscar palavras que começam com "bat" (ex: bateria, baterias):
+  ```
+  GET erbd-reviews-index/_search
+  {
+    "query": {
+      "query_string": {
+        "query": "bat*"
+      }
+    }
+  }
+  ```
+
+- **Exemplo usando operadores lógicos (AND, OR, NOT):**  
+  Buscar reviews que contenham "bateria" e "excelente", ou "câmera", mas não "ruim":
+  ```
+  GET erbd-reviews-index/_search
+  {
+    "query": {
+      "query_string": {
+        "query": "(celular NOT ruim) AND (bateria AND excelente)"
+      }
+    }
+  }
+  ```
+
+- **Exemplo de filtro numérico dentro do query_string:**  
+  Buscar reviews com nota maior ou igual a 4:
+  ```
+  GET erbd-reviews-index/_search
+  {
+    "query": {
+      "query_string": {
+        "query": "rating:>=4"
+      }
+    }
+  }
+  ```
+
+  - **Combinando operadores lógicos e filtros numéricos:**
+    Buscar reviews que contenham "bateria" e "excelente", com nota maior ou igual a 5:
+    ```
+    GET erbd-reviews-index/_search
+    {
+      "query": {
+        "query_string": {
+          "query": "(celular NOT ruim) AND (bateria AND excelente) AND (rating:>=5)"
+        }
+      }
+    }
+    ```
+
+    - **Exemplo de busca com frases exatas:**
+    Para buscar reviews que contenham a frase exata "bateria excelente":
+    ```
+    GET erbd-reviews-index/_search
+    {
+      "query": {
+        "query_string": {
+          "query": "\"celular é bom\""
+        }
+      }
+    }
+    ```
+    Isso retornará apenas os reviews que contêm exatamente essa frase.
+
+    - **Aggregações:**
+    Para contar quantos reviews existem para cada nota (rating):
+    ```
+    GET erbd-reviews-index/_search
+    {
+      "size": 0,
+      "aggs": {
+        "ratings_count": {
+          "terms": {
+            "field": "rating"
+          }
+        }
+      }
+    }
+    ```
+    Isso retornará a contagem de reviews para cada nota, permitindo entender a distribuição das avaliações.
+
+    Agora usando o `query_string`:
+    ```
+    GET erbd-reviews-index/_search
+    {
+      "size": 0,
+      "query": {
+        "query_string": {
+          "query": "bat*"
+        }
+      },
+      "aggs": {
+        "ratings_count": {
+          "terms": {
+            "field": "rating"
+          }
+        }
+      }
+    }
+    ```
+
+Essas consultas mostram o poder do query_string para buscas flexíveis e avançadas no Elasticsearch!
+
+## Conteúdo do Curso
+
+1. Ingestão de Dados:
+
+A partir do `script_test.py`, vamos realizar uma cópia do arquivo e renomear o arquivo para `script_1.py`.
+
+No lugar onde obtemos criamos dados ficticios, vamos buscar os dados reais. Para isso vamos buscar dados da loja de aplicativos do Google Play, especificamente os dados de reviews de aplicativos. Para isso, utilizaremos a biblioteca `google_play_scraper` para coletar os dados.
+
+```python
+from google_play_scraper import reviews, Sort
+
+app_id = 'br.com.gabba.Caixa' # ID do aplicativo
+result, continuation_token = reviews(
+    app_id,
+    lang='pt',
+    country='br',
+    sort=Sort.MOST_RELEVANT,
+    count=5
+)
+
+reviews = []
+for review in result:
+    reviews.append({
+        "id": review['reviewId'],
+        "text": review['content'],
+        "rating": review['score']
+    })
+```
 
 ## Autores
 
