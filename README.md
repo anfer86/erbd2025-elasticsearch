@@ -341,11 +341,11 @@ Neste link você encontra o material de como fazer a fusão de rankings com RRF 
 
 ## Autores
 
-* **Carlos Andres Ferrero** - [GitHub](https://github.com/anfer86)
+* **Carlos Andres Ferrero** - [GitHub](https://github.com/anfer86) - Linkedin: [Carlos Andres Ferrero](https://www.linkedin.com/in/carlos-andres-ferrero/)
 
 ## Afiliação
 
 * **Instituto Federal de Santa Catarina (IFSC)**
-* **Centro de Excelência em Inteligência Artificial (CEIA) - UFG**
-* **Birdie**
+* **Centro de Excelência em Inteligência Artificial (CEIA) - UFG** (https://ceia.ufg.br/) (https://www.linkedin.com/company/centrodeexcelenciaemia/)
+* **Birdie** (https://www.birdie.ai/) (https://www.linkedin.com/company/usebirdie/)
 
