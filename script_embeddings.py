@@ -21,29 +21,6 @@ result_list, continuation_token = reviews(
 )
 
 reviews = []
-for result in result_list:
-    content = result['content'].strip()    
-    for i, sentence in enumerate(content.split('.')):
-        if len(sentence.strip()) < 20:
-            continue
-        
-        review = {
-            "id_review": result['reviewId'],
-            "id": f"`{result['reviewId']}#{i}",
-            "text": result['content'],
-            "rating": result['score'],
-            "sentence": sentence.strip()
-        }
-        logger.info(f"Review: {review}")
-        reviews.append(review)
-
-from sentence_transformers import SentenceTransformer
-print("Carregando o modelo de embeddings...")
-model = SentenceTransformer('intfloat/multilingual-e5-small')
-
-for review in tqdm(reviews):
-    # encode the text to get its vector representation
-    review['sentence_embeddings'] = model.encode(review['sentence'], convert_to_tensor=True).tolist()    
 
 logger.info("Conectando ao Elasticsearch local...")
 es = Elasticsearch(hosts=[elastic_host])
@@ -112,7 +89,7 @@ for review in reviews:
 logger.info("Definindo a consulta para buscar reviews com as palavras 'aplicativo lento'...")
 query_text = 'aplicativo lento'
 
-query_vector = model.encode(query_text, convert_to_tensor=True).tolist()
+query_vector = []
 # mostrar os primeiros 10 valores do vetor ... e os ultimos 3, usar 4 casas decimais
 logger.info(f"Vetor da consulta: {query_vector[:10]} ... {query_vector[-3:]}")
 

@@ -4,7 +4,7 @@ Este repositório contém os materiais da oficina **"ElasticSearch na prática: 
 
 ## Descrição
 
-Nesta oficina, exploraremos como estruturar buscas eficientes utilizando ElasticSearch, desde consultas textuais tradicionais até buscas semânticas com embeddings. Vamos instanciar localmente um ambiente com ElasticSearch e Kibana via Docker, criar um índice e indexar dados reais de reviews usando Python. A partir disso, compararemos buscas sintáticas e semânticas, demonstrando como embeddings podem aprimorar a relevância dos resultados.
+Nesta oficina, exploraremos como estruturar buscas utilizando ElasticSearch, desde consultas textuais tradicionais até buscas semânticas com embeddings. Vamos instanciar localmente um ambiente com ElasticSearch e Kibana via Docker, criar um índice e indexar dados reais de reviews usando Python. A partir disso, compararemos buscas sintáticas e semânticas, demonstrando como embeddings podem aprimorar a relevância dos resultados.
 
 Essa é uma oportunidade prática para entender e aplicar técnicas modernas de busca de informação em grandes conjuntos de dados textuais, e como integrar essas técnicas em processos de **Retrieval-Augmented Generation (RAG)**, essencial para melhorar as respostas geradas pelos atuais modelos de linguagem.
 
@@ -17,11 +17,21 @@ Essa é uma oportunidade prática para entender e aplicar técnicas modernas de 
 
 ## A. Instalação e Configuração
 
-### 1. Clonar este repositório
+### 1. Baixar o repositório sem Git
+
+Se você não pode usar o Git, siga estes passos:
+
+1. Acesse o site do projeto no GitHub: https://github.com/seu-usuario/elastic-search-erbd-2025
+2. Clique no botão verde "Code" e selecione "Download ZIP".
+3. Extraia o arquivo ZIP na sua Área de Trabalho.
+4. Abra o VS Code e selecione "Abrir Pasta", escolhendo a pasta extraída.
+
+### 1. a. Clonar este repositório com Git
 ```bash
 $ git clone https://github.com/seu-usuario/elastic-search-erbd-2025.git
 $ cd elastic-search-erbd-2025
 ```
+Depois disso você pode abrir o VS Code e selecionar "Abrir Pasta", escolhendo a pasta do repositório clonado.
 
 As etapas 2 e 3 são opcionais se você esta fazendo a oficina no ambiente do evento, pois o ElasticSearch e o Kibana já estão configuradas em `http://oficinaerbd.inf.ufsc.br:9200/` e `http://oficinaerbd.inf.ufsc.br:5601/`, respectivamente. Caso contrário, siga os passos abaixo para configurar o ambiente localmente.
 
@@ -54,6 +64,9 @@ Para isolar as dependências do projeto, criamos um ambiente virtual:
 ```bash
 $ python -m venv env
 ```
+
+Se o VSCode não detectar automaticamente o ambiente virtual, você pode ativá-lo manualmente.
+
 No Windows, ative com:
 ```bash
 $ env\Scripts\activate.bat
@@ -69,6 +82,7 @@ Instale os pacotes necessários listados no `requirements.txt`:
 ```bash
 $ pip install -r requirements.txt
 ```
+Este processo pode demorar alguns minutos, dependendo da sua conexão com a internet.
 
 ## Executando Scripts de Indexação
 
@@ -243,8 +257,6 @@ BM25 se baseia na frequência de termos (TF) e na frequência inversa de documen
 
 ## C. Ingerindo dados reais de reviews de produtos
 
-A partir do `script_test.py`, vamos realizar uma cópia do arquivo e renomear o arquivo para `script_playstore.py`.
-
 No lugar onde obtemos criamos dados ficticios, vamos buscar os dados reais. Para isso vamos buscar dados da loja de aplicativos do Google Play, especificamente os dados de reviews de aplicativos. Para isso, utilizaremos a biblioteca `google_play_scraper` para coletar os dados.
 
 ```python
@@ -270,7 +282,61 @@ for result in result_list:
     reviews.append(review)
 ```
 
+Basta copiar este código na linha em que temos `reviews = []` e rodar o script novamente. Isso irá buscar os dados reais de reviews do aplicativo da Caixa Econômica Federal.
 
+Temos uma interface web para visualizar os resultados das buscas:
+```bash
+python app_search.py
+```
+Acesse a interface em: [http://localhost:8000](http://localhost:8000)
+
+## D. Buscas Semânticas com Embeddings
+
+Agora, alem de indexar os textos dos reviews, vamos gerar embeddings para cada sentença dos reviews usando a biblioteca `sentence-transformers`. O objetivo é permitir buscas semânticas, onde a consulta é transformada em vetor e comparada com os vetores dos reviews.
+
+No arquivo `script_embeddings.py`, inicialmente, os reviews são coletados, mas não há geração de embeddings nem divisão em sentenças. Para implementar a busca semântica, siga os passos abaixo (como feito em `script_embeddings_solved.py`):
+
+```python
+reviews = []
+for result in result_list:
+    content = result['content'].strip()    
+    for i, sentence in enumerate(content.split('.')):
+        if len(sentence.strip()) < 20:
+            continue
+        
+        review = {
+            "id_review": result['reviewId'],
+            "id": f"`{result['reviewId']}#{i}",
+            "text": result['content'],
+            "rating": result['score'],
+            "sentence": sentence.strip()
+        }
+        logger.info(f"Review: {review}")
+        reviews.append(review)
+
+from sentence_transformers import SentenceTransformer, util
+model = SentenceTransformer('intfloat/multilingual-e5-small')
+
+for review in tqdm(reviews):
+    # encode the text to get its vector representation
+    review['sentence_embeddings'] = model.encode(review['sentence'], convert_to_tensor=True).tolist() 
+```
+
+Basta copiar este código na linha em que temos `reviews = []` e rodar o script novamente. Isso irá buscar os dados reais de reviews do aplicativo da Caixa Econômica Federal.
+
+Além disso, onde temos `query_vector = []``, vamos gerar o vetor da consulta:
+
+```python
+query_vector = model.encode(query, convert_to_tensor=True).tolist()
+```
+
+Dessa forma, a busca semântica permite encontrar reviews relevantes mesmo quando a consulta não contém exatamente as mesmas palavras dos textos indexados, superando as limitações da busca textual tradicional.
+
+## E. Buscas Semânticas com Embeddings
+
+RFF (Reciprocal rank fusion) é uma técnica de fusão de rankings que combina resultados de diferentes sistemas de busca, atribuindo pontuações a cada resultado com base na posição em que aparecem nos rankings individuais. Essa abordagem é útil para melhorar a precisão e a relevância dos resultados finais, aproveitando as forças de cada sistema.
+
+Neste link você encontra o material de como fazer a fusão de rankings com RRF com ElasticSearch: [RRF](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion.html)
 
 
 ## Autores

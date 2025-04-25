@@ -56,12 +56,11 @@ logger.info("Inserindo cada review no índice...")
 for review in reviews:
     es.index(index=index_name, body=review, refresh=True)
 
-logger.info("Definindo a consulta para buscar reviews com as palavras 'celular' e 'excelente'...")
+logger.info("Definindo a consulta para buscar reviews com as palavras 'app' e 'lento'...")
 query = {   
     "query_string": {
-        "query": 'celular excelente',
-        "fields": ["text"],
-        "quote_field_suffix": ".exact"
+        "query": 'app AND lento',
+        "fields": ["text"]
     }
 }
 
